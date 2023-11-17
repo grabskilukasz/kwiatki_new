@@ -6,6 +6,7 @@ from sklearn import metrics
 import pickle
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import sqlite3
 
 app = FastAPI()
 
@@ -55,3 +56,35 @@ def predict_species(item: IrisItem):
 @app.get("/1")
 def root():
     return {"Hello": "World"}
+
+
+@app.post("/respond")
+def respond(number: int):
+    response_message = f"Received number: {number}."
+
+    conn = sqlite3.connect('example.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS numbers (
+            id INTEGER PRIMARY KEY,
+            number INTEGER NOT NULL
+        )
+    ''')
+    cursor.execute("INSERT INTO numbers (number) VALUES (?)", (number,))
+    conn.commit()
+    conn.close()
+
+    return {"response": response_message}
+
+@app.get("/read")
+def respond():
+    conn = sqlite3.connect('example.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM numbers")
+    results = cursor.fetchall()
+
+    for row in results:
+        print(row)
+
+    return row
